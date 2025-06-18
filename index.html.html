@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Tabiques Sustentables</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6/babel.min.js"></script>
+    <style>
+        :root {
+            --primary: #2196F3;
+            --primary-dark: #1976D2;
+            --secondary: #4CAF50;
+            --secondary-dark: #388E3C;
+            --accent: #9C27B0;
+            --accent-dark: #7B1FA2;
+            --warning: #FF9800;
+            --error: #F44336;
+            --success: #4CAF50;
+            --dark: #263238;
+            --light: #f8f9fa;
+            --gray: #607D8B;
+            --light-gray: #ECEFF1;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--gray);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .tab-btn {
+            padding: 12px 25px;
+            border-radius: 50px;
+            background: white;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tab-btn.active {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        .tab-btn.properties.active {
+            background: var(--primary);
+        }
+        
+        .tab-btn.impact.active {
+            background: var(--secondary);
+        }
+        
+        .tab-btn.economic.active {
+            background: var(--accent);
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+        
+        @media (min-width: 992px) {
+            .main-grid {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .panel:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .panel-title {
+            font-size: 1.4rem;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .group-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .group-title i {
+            margin-right: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        
+        .slider-value {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: var(--light-gray);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .dimension-input {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .dimension-input label {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            color: var(--gray);
+        }
+        
+        .dimension-input input {
+            padding: 10px;
+            border: 1px solid var(--light-gray);
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+        }
+        
+        .stats-summary {
+            background: var(--light-gray);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .view-container {
+            display: grid;
+            gap: 25px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .comparison-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .material-card {
+            padding: 20px;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .material-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .sustainable {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid var(--primary);
+        }
+        
+        .conventional {
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-left: 4px solid var(--error);
+        }
+        
+        .material-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .property {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+        }
+        
+        .property:last-child {
+            border-bottom: none;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+            position: relative;
+        }
+        
+        .recommendations {
+            margin-top: 25px;
+        }
+        
+        .recommendation {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .recommendation.error {
+            background: #ffebee;
+            border-left: 4px solid var(--error);
+        }
+        
+        .recommendation.warning {
+            background: #fff8e1;
+            border-left: 4px solid var(--warning);
+        }
+        
+        .recommendation.success {
+            background: #e8f5e9;
+            border-left: 4px solid var(--success);
+        }
+        
+        .rec-icon {
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+        
+        .impact-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 768px) {
+            .impact-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        .impact-card {
+            padding: 20px;
+            border-radius: 12px;
+            transition: transform 0.3s ease;
+        }
+        
+        .impact-card.benefits {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        
+        .impact-card.emissions {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+        
+        .impact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+        }
+        
+        .impact-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .impact-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .impact-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+        
+        .normative-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .normative-item {
+            padding: 20px 10px;
+            border-radius: 10px;
+            background: var(--light-gray);
+        }
+        
+        .normative-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 2rem;
+        }
+        
+        .normative-icon.compliant {
+            background: #e8f5e9;
+            color: var(--success);
+        }
+        
+        .normative-icon.non-compliant {
+            background: #ffebee;
+            color: var(--error);
+        }
+        
+        .production-control {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+        
+        .production-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .stat-card {
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stat-card.cost {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        }
+        
+        .stat-card.material {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+        }
+        
+        .stat-card.co2 {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .performance-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 15px;
+            border-radius: 30px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .performance-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--light-gray);
+            border-radius: 4px;
+            margin-left: 10px;
+            overflow: hidden;
+        }
+        
+        .performance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #2196F3);
+            border-radius: 4px;
+        }
+        
+        .model-3d {
+            width: 100%;
+            height: 200px;
+            background: #f0f8ff;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+        
+        .brick-model {
+            width: 120px;
+            height: 60px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(-20deg);
+        }
+        
+        .brick-face {
+            position: absolute;
+            background: #FF6B6B;
+            border: 1px solid #e05555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            overflow: hidden;
+        }
+        
+        .brick-face.front {
+            width: 120px;
+            height: 40px;
+            transform: translateZ(20px);
+        }
+        
+        .brick-face.back {
+            width: 120px;
+            height: 40px;
+            transform: translateZ(-20px) rotateY(180deg);
+        }
+        
+        .brick-face.top {
+            width: 120px;
+            height: 40px;
+            transform: rotateX(90deg) translateZ(20px);
+            background: #FF8A8A;
+        }
+        
+        .brick-face.bottom {
+            width: 120px;
+            height: 40px;
+            transform: rotateX(-90deg) translateZ(20px);
+            background: #E05555;
+        }
+        
+        .brick-face.right {
+            width: 40px;
+            height: 40px;
+            transform: rotateY(90deg) translateZ(60px);
+            background: #FF8A8A;
+        }
+        
+        .brick-face.left {
+            width: 40px;
+            height: 40px;
+            transform: rotateY(-90deg) translateZ(60px);
+            background: #E05555;
+        }
+        
+        .brick-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255,255,255,0.2) 10px,
+                    rgba(255,255,255,0.2) 12px
+                );
+        }
+        
+        .history-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .history-btn {
+            padding: 6px 12px;
+            background: var(--light-gray);
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, rgba(33,150,243,0.2) 0%, rgba(33,150,243,0) 100%);
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Simulador de Tabiques Sustentables</h1>
+            <p class="subtitle">Analiza las propiedades, impacto ambiental y economía de tabiques fabricados con PET reciclado y ceniza de cigarro</p>
+            
+            <div class="performance-indicator">
+                <span>Rendimiento:</span>
+                <div class="performance-bar">
+                    <div class="performance-fill" style="width: 78%"></div>
+                </div>
+                <span>78%</span>
+            </div>
+        </header>
+        
+        <div class="nav-tabs">
+            <button class="tab-btn properties active">Propiedades Técnicas</button>
+            <button class="tab-btn impact">Impacto Ambiental</button>
+            <button class="tab-btn economic">Análisis Económico</button>
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h2 class="panel-title">Panel de Control</h2>
+                
+                <div class="control-group">
+                    <h3 class="group-title">Composición del Tabique (%)</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>PET Reciclado</span>
+                            <span class="slider-value">65%</span>
+                        </div>
+                        <input type="range" min="30" max="80" value="65">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Ceniza de Cigarro</span>
+                            <span class="slider-value">25%</span>
+                        </div>
+                        <input type="range" min="10" max="50" value="25">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Cemento</span>
+                            <span class="slider-value">10%</span>
+                        </div>
+                        <input type="range" min="5" max="30" value="10">
+                    </div>
+                    
+                    <div class="stats-summary">
+                        Total: 100%
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3 class="group-title">Dimensiones del Tabique</h3>
+                    
+                    <div class="dimensions-grid">
+                        <div class="dimension-input">
+                            <label>Largo (cm)</label>
+                            <input type="number" value="25">
+                        </div>
+                        <div class="dimension-input">
+                            <label>Ancho (cm)</label>
+                            <input type="number" value="12">
+                        </div>
+                        <div class="dimension-input">
+                            <label>Alto (cm)</label>
+                            <input type="number" value="7">
+                        </div>
+                    </div>
+                    
+                    <div class="stats-summary">
+                        Volumen: 2100 cm³ | Peso: 1.75 kg
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3 class="group-title">Modelo 3D</h3>
+                    <div class="model-3d">
+                        <div class="brick-model">
+                            <div class="brick-face front">
+                                <div class="brick-pattern"></div>
+                            </div>
+                            <div class="brick-face back"></div>
+                            <div class="brick-face top"></div>
+                            <div class="brick-face bottom"></div>
+                            <div class="brick-face right"></div>
+                            <div class="brick-face left"></div>
+                        </div>
+                    </div>
+                    <div class="stats-summary">
+                        Escala: 1:5 | PET: 65%
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3 class="group-title">Parámetros de Prueba</h3>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Carga Máxima (kg)</span>
+                            <span class="slider-value">2000 kg</span>
+                        </div>
+                        <input type="range" min="500" max="5000" value="2000">
+                    </div>
+                    
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span>Vida Útil Estimada</span>
+                            <span class="slider-value">50 años</span>
+                        </div>
+                        <input type="range" min="20" max="100" value="50">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button class="tab-btn" style="background: var(--primary); color: white; width: 100%; padding: 12px;">
+                        Guardar Composición Actual
+                    </button>
+                    
+                    <div class="history-buttons">
+                        <button class="history-btn">Versión 1</button>
+                        <button class="history-btn">Versión 2</button>
+                        <button class="history-btn">Versión 3</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="view-container">
+                <!-- Vista de Propiedades Técnicas -->
+                <div class="card">
+                    <h2 class="card-title">Comparación de Propiedades</h2>
+                    
+                    <div class="comparison-grid">
+                        <div class="material-card sustainable">
+                            <h3 class="material-title">Tabique Sustentable</h3>
+                            <div class="property">
+                                <span>Densidad:</span>
+                                <strong>1,380 kg/m³</strong>
+                            </div>
+                            <div class="property">
+                                <span>Módulo Elástico:</span>
+                                <strong>2,800 MPa</strong>
+                            </div>
+                            <div class="property">
+                                <span>Resistencia Compresión:</span>
+                                <strong>55 MPa</strong>
+                            </div>
+                            <div class="property">
+                                <span>Conductividad Térmica:</span>
+                                <strong>0.20 W/m·K</strong>
+                            </div>
+                            <div class="property">
+                                <span>Absorción de Agua:</span>
+                                <strong>0.1%</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="material-card conventional">
+                            <h3 class="material-title">Tabique Convencional</h3>
+                            <div class="property">
+                                <span>Densidad:</span>
+                                <strong>1,850 kg/m³</strong>
+                            </div>
+                            <div class="property">
+                                <span>Módulo Elástico:</span>
+                                <strong>12,000 MPa</strong>
+                            </div>
+                            <div class="property">
+                                <span>Resistencia Compresión:</span>
+                                <strong>85 MPa</strong>
+                            </div>
+                            <div class="property">
+                                <span>Conductividad Térmica:</span>
+                                <strong>1.20 W/m·K</strong>
+                            </div>
+                            <div class="property">
+                                <span>Absorción de Agua:</span>
+                                <strong>8.0%</strong>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                    
+                    <div class="recommendations">
+                        <h3 class="group-title">Recomendaciones Inteligentes</h3>
+                        
+                        <div class="recommendation warning">
+                            <div class="rec-icon">⚠️</div>
+                            <div>
+                                <strong>Alerta de resistencia</strong>
+                                <p>La resistencia a compresión es un 35% inferior al tabique convencional. Considere aumentar el cemento en un 5-10%.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="recommendation success">
+                            <div class="rec-icon">✅</div>
+                            <div>
+                                <strong>Excelente aislamiento térmico</strong>
+                                <p>Su tabique tiene 6 veces mejor aislamiento que el convencional. Ideal para climas cálidos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">Prueba de Compresión</h2>
+                    <div class="chart-container">
+                        <canvas id="compressionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2 class="card-title">Cumplimiento Normativo</h2>
+                    
+                    <div class="normative-grid">
+                        <div class="normative-item">
+                            <div class="normative-icon compliant">✓</div>
+                            <h4>ISO 18071</h4>
+                            <p>Resistencia</p>
+                        </div>
+                        
+                        <div class="normative-item">
+                            <div class="normative-icon compliant">✓</div>
+                            <h4>ASTM C67</h4>
+                            <p>Absorción</p>
+                        </div>
+                        
+                        <div class="normative-item">
+                            <div class="normative-icon non-compliant">✗</div>
+                            <h4>LEED v4</h4>
+                            <p>Sustentabilidad</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Vista de Impacto Ambiental -->
+                <div class="card" style="display: none;">
+                    <h2 class="card-title">Impacto Ambiental</h2>
+                    
+                    <div class="impact-grid">
+                        <div class="impact-card benefits">
+                            <h3 class="material-title">Beneficios Ambientales</h3>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E8F5E9;">
+                                    🍶
+                                </div>
+                                <div>
+                                    <p>Botellas PET recicladas</p>
+                                    <div class="impact-value">3.4</div>
+                                    <p>por tabique</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E8F5E9;">
+                                    🚬
+                                </div>
+                                <div>
+                                    <p>Colillas de cigarro reutilizadas</p>
+                                    <div class="impact-value">125</div>
+                                    <p>por tabique</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E8F5E9;">
+                                    ⚡
+                                </div>
+                                <div>
+                                    <p>Ahorro energético</p>
+                                    <div class="impact-value">18.5</div>
+                                    <p>MJ por tabique</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="impact-card emissions">
+                            <h3 class="material-title">Reducción de Emisiones</h3>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E3F2FD;">
+                                    🌍
+                                </div>
+                                <div>
+                                    <p>CO₂ evitado</p>
+                                    <div class="impact-value">1.25</div>
+                                    <p>kg por tabique</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E3F2FD;">
+                                    🌳
+                                </div>
+                                <div>
+                                    <p>Equivalente en árboles</p>
+                                    <div class="impact-value">0.06</div>
+                                    <p>por tabique</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #E3F2FD;">
+                                    ♻️
+                                </div>
+                                <div>
+                                    <p>Residuos transformados</p>
+                                    <div class="impact-value">0.42</div>
+                                    <p>kg por tabique</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="display: none;">
+                    <h2 class="card-title">Comparación de Emisiones de CO₂</h2>
+                    <div class="chart-container">
+                        <canvas id="emissionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Vista de Análisis Económico -->
+                <div class="card" style="display: none;">
+                    <h2 class="card-title">Análisis de Costos</h2>
+                    
+                    <div class="comparison-grid">
+                        <div class="material-card">
+                            <h3 class="material-title">Costos Directos</h3>
+                            
+                            <div class="property">
+                                <span>Material sustentable:</span>
+                                <strong>$8.75 MXN</strong>
+                            </div>
+                            <div class="property">
+                                <span>Material convencional:</span>
+                                <strong>$7.40 MXN</strong>
+                            </div>
+                            
+                            <div style="margin: 20px 0; height: 10px; background: #F5F5F5; border-radius: 5px;">
+                                <div style="height: 100%; width: 58%; background: linear-gradient(90deg, #2196F3, #9C27B0); border-radius: 5px;"></div>
+                            </div>
+                            
+                            <div class="property">
+                                <span>Costo total sustentable:</span>
+                                <strong>$15.25 MXN</strong>
+                            </div>
+                            <div class="property">
+                                <span>Costo total convencional:</span>
+                                <strong>$12.80 MXN</strong>
+                            </div>
+                            
+                            <div class="property" style="margin-top: 20px; background: #FFF8E1; padding: 10px; border-radius: 8px;">
+                                <span>Diferencia porcentual:</span>
+                                <strong style="color: #F57C00;">+19.1%</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="material-card">
+                            <h3 class="material-title">Análisis de Ciclo de Vida</h3>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #FFF8E1;">
+                                    💰
+                                </div>
+                                <div>
+                                    <p>Costo anual sustentable</p>
+                                    <div class="impact-value">$0.34</div>
+                                    <p>MXN por año</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item">
+                                <div class="impact-icon" style="background: #FFF8E1;">
+                                    📊
+                                </div>
+                                <div>
+                                    <p>Costo anual convencional</p>
+                                    <div class="impact-value">$0.26</div>
+                                    <p>MXN por año</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item" style="background: #E8F5E9; border-radius: 8px; margin-top: 15px;">
+                                <div class="impact-icon" style="background: #C8E6C9;">
+                                    💸
+                                </div>
+                                <div>
+                                    <p>Ahorro anual estimado</p>
+                                    <div class="impact-value">$0.05</div>
+                                    <p>MXN por tabique</p>
+                                </div>
+                            </div>
+                            
+                            <div class="impact-item" style="margin-top: 15px;">
+                                <div class="impact-icon" style="background: #E3F2FD;">
+                                    📜
+                                </div>
+                                <div>
+                                    <p>Incentivos ambientales</p>
+                                    <div class="impact-value">$2.29</div>
+                                    <p>MXN por tabique</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="display: none;">
+                    <h2 class="card-title">Simulación de Producción</h2>
+                    
+                    <div class="production-control">
+                        <label>Cantidad de tabiques:</label>
+                        <input type="range" min="100" max="10000" value="5000" style="flex: 1;">
+                        <span style="font-weight: bold; min-width: 80px;">5,000 uni</span>
+                    </div>
+                    
+                    <div class="production-stats">
+                        <div class="stat-card cost">
+                            <p>Costo total</p>
+                            <div class="stat-value">$76,250</div>
+                            <p>MXN</p>
+                        </div>
+                        
+                        <div class="stat-card material">
+                            <p>Material reciclado</p>
+                            <div class="stat-value">2,100</div>
+                            <p>kg</p>
+                        </div>
+                        
+                        <div class="stat-card co2">
+                            <p>CO₂ evitado</p>
+                            <div class="stat-value">6,250</div>
+                            <p>kg</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="display: none;">
+                    <h2 class="card-title">Proyección Financiera (50 años)</h2>
+                    <div class="chart-container">
+                        <canvas id="financeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Simulador desarrollado para análisis de materiales sustentables | © 2023</p>
+            <p>Los datos presentados son simulados y pueden variar en condiciones reales de producción</p>
+        </footer>
+    </div>
+
+    <script>
+        // Inicializar gráficos
+        document.addEventListener('DOMContentLoaded', function() {
+            // Radar Chart
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Resistencia', 'Densidad', 'Aislamiento', 'Durabilidad', 'Costo'],
+                    datasets: [{
+                        label: 'Sustentable',
+                        data: [65, 135, 600, 125, 220],
+                        fill: true,
+                        backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                        borderColor: 'rgb(33, 150, 243)',
+                        pointBackgroundColor: 'rgb(33, 150, 243)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(33, 150, 243)'
+                    }, {
+                        label: 'Convencional',
+                        data: [100, 100, 100, 100, 100],
+                        fill: true,
+                        backgroundColor: 'rgba(255, 87, 34, 0.2)',
+                        borderColor: 'rgb(255, 87, 34)',
+                        pointBackgroundColor: 'rgb(255, 87, 34)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(255, 87, 34)'
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: {
+                                display: true
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 600
+                        }
+                    }
+                }
+            });
+            
+            // Compression Chart
+            const compressionCtx = document.getElementById('compressionChart').getContext('2d');
+            new Chart(compressionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['0', '5', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'],
+                    datasets: [{
+                        label: 'Tabique Sustentable',
+                        data: [0, 120, 220, 310, 380, 420, 440, 450, 460, 470, 480, 490],
+                        borderColor: 'rgb(33, 150, 243)',
+                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }, {
+                        label: 'Tabique Convencional',
+                        data: [0, 150, 290, 410, 520, 620, 710, 780, 820, 840, 850, 860],
+                        borderColor: 'rgb(255, 87, 34)',
+                        backgroundColor: 'rgba(255, 87, 34, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Esfuerzo (MPa)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Deformación (µm/m)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Emmission Chart
+            const emmissionCtx = document.getElementById('emissionChart').getContext('2d');
+            new Chart(emmissionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Sustentable', 'Convencional'],
+                    datasets: [{
+                        label: 'Emisiones de CO₂',
+                        data: [1.25, 3.75],
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.7)',
+                            'rgba(244, 67, 54, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgb(76, 175, 80)',
+                            'rgb(244, 67, 54)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'kg CO₂ por tabique'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Finance Chart
+            const financeCtx = document.getElementById('financeChart').getContext('2d');
+            new Chart(financeCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2025', '2030', '2035', '2040', '2045', '2050', '2055', '2060', '2065', '2070'],
+                    datasets: [{
+                        label: 'Sustentable',
+                        data: [15.25, 17.10, 19.25, 21.80, 24.75, 28.10, 31.90, 36.20, 41.00, 46.50],
+                        borderColor: 'rgb(76, 175, 80)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.2,
+                        fill: true
+                    }, {
+                        label: 'Convencional',
+                        data: [12.80, 16.25, 20.60, 26.15, 33.20, 42.15, 53.50, 67.90, 86.20, 109.40],
+                        borderColor: 'rgb(244, 67, 54)',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Costo por tabique (MXN)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Navegación por pestañas
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const viewCards = document.querySelectorAll('.view-container .card');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remover clase activa de todos los botones
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Añadir clase activa al botón clickeado
+                    button.classList.add('active');
+                    
+                    // Determinar qué vista mostrar
+                    const viewType = button.classList[2]; // properties, impact, economic
+                    
+                    // Ocultar todas las vistas
+                    viewCards.forEach(card => card.style.display = 'none');
+                    
+                    // Mostrar solo las tarjetas relevantes
+                    if (viewType === 'properties') {
+                        document.querySelectorAll('.view-container .card')[0].style.display = 'block';
+                        document.querySelectorAll('.view-container .card')[1].style.display = 'block';
+                        document.querySelectorAll('.view-container .card')[2].style.display = 'block';
+                    } else if (viewType === 'impact') {
+                        document.querySelectorAll('.view-container .card')[3].style.display = 'block';
+                        document.querySelectorAll('.view-container .card')[4].style.display = 'block';
+                    } else if (viewType === 'economic') {
+                        document.querySelectorAll('.view-container .card')[5].style.display = 'block';
+                        document.querySelectorAll('.view-container .card')[6].style.display = 'block';
+                        document.querySelectorAll('.view-container .card')[7].style.display = 'block';
+                    }
+                });
+            });
+            
+            // Actualizar valores de los sliders
+            const sliders = document.querySelectorAll('input[type="range"]');
+            const sliderValues = document.querySelectorAll('.slider-value');
+            
+            sliders.forEach((slider, index) => {
+                slider.addEventListener('input', () => {
+                    if (index === 0 || index === 1 || index === 2) {
+                        // Sliders de composición
+                        sliderValues[index].textContent = slider.value + '%';
+                        
+                        // Actualizar total
+                        const total = parseInt(document.querySelectorAll('input[type="range"]')[0].value) +
+                                     parseInt(document.querySelectorAll('input[type="range"]')[1].value) +
+                                     parseInt(document.querySelectorAll('input[type="range"]')[2].value);
+                        document.querySelector('.stats-summary').textContent = `Total: ${total}%`;
+                    } else if (index === 3) {
+                        // Carga máxima
+                        sliderValues[3].textContent = slider.value + ' kg';
+                    } else if (index === 4) {
+                        // Vida útil
+                        sliderValues[4].textContent = slider.value + ' años';
+                    }
+                });
+            });
+            
+            // Actualizar dimensiones
+            const dimensionInputs = document.querySelectorAll('.dimension-input input');
+            dimensionInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const length = parseFloat(dimensionInputs[0].value) || 0;
+                    const width = parseFloat(dimensionInputs[1].value) || 0;
+                    const height = parseFloat(dimensionInputs[2].value) || 0;
+                    
+                    const volume = length * width * height;
+                    const weight = (volume * 1.75 / 2100).toFixed(2);
+                    
+                    document.querySelectorAll('.stats-summary')[1].textContent = 
+                        `Volumen: ${volume} cm³ | Peso: ${weight} kg`;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
